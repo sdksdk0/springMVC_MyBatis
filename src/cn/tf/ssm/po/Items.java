@@ -2,15 +2,24 @@ package cn.tf.ssm.po;
 
 import java.util.Date;
 
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+
+import cn.tf.ssm.group.VaildGroup1;
+
+
+
 public class Items {
     private Integer id;
 
+    @Size(min=1,max=30,message="{item.name.error}",groups={VaildGroup1.class})
     private String name;
 
     private Float price;
 
     private String pic;
 
+    @NotNull(message="{item.createtime.null}")
     private Date createtime;
 
     private String detail;

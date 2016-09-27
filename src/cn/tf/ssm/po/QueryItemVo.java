@@ -1,6 +1,12 @@
 package cn.tf.ssm.po;
 
+import java.util.List;
+
 public class QueryItemVo {
+	
+	//接收页面的批量提交
+	private List<Items> itemsList;
+	
 	
 	//商品信息
 	private Items items;
@@ -22,6 +28,14 @@ public class QueryItemVo {
 
 	public void setItemsCustom(ItemsCustom itemsCustom) {
 		this.itemsCustom = itemsCustom;
+	}
+
+	public List<Items> getItemsList() {
+		return itemsList;
+	}
+
+	public void setItemsList(List<Items> itemsList) {
+		this.itemsList = itemsList;
 	}
 	
 	

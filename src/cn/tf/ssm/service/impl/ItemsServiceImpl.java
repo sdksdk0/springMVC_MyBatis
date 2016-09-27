@@ -33,6 +33,11 @@ public class ItemsServiceImpl implements ItemsService{
 
 	@Override
 	public void updateItems(Integer id, Items items) throws Exception {
+		
+		
+		
+		
+		
 		items.setId(id);
 		itemsMapper.updateByPrimaryKey(items);
 		
