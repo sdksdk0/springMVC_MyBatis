@@ -1,8 +1,10 @@
 package cn.tf.ssm.controller;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -16,8 +18,10 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
+import cn.tf.ssm.controller.exception.CustomException;
 import cn.tf.ssm.group.VaildGroup1;
 import cn.tf.ssm.po.Items;
 import cn.tf.ssm.po.ItemsCustom;
@@ -50,6 +54,12 @@ public class ItemsController {
 		
 		//String id=request.getParameter("id");
 		Items items=itemsService.findItemById(id);
+		
+		if(items==null){
+			throw new CustomException("商品信息不存在");
+		}
+		
+		
 		model.addAttribute("items",items);
 		
 		//返回逻辑视图名
@@ -79,8 +89,9 @@ public class ItemsController {
 	
 	//保存修改
 	@RequestMapping("/saveItems")
-	public String  editItems(Model model,Integer id,@Validated(value={VaildGroup1.class}) Items items,BindingResult bindingResult) throws Exception {
+	public String  editItems(Model model,Integer id,@Validated(value={VaildGroup1.class}) Items items,BindingResult bindingResult,MultipartFile  pictureFile) throws Exception {
 		
+
 		if(bindingResult.hasErrors()){
 			List<ObjectError>  allErrors=bindingResult.getAllErrors();
 			for (ObjectError objectError : allErrors) {
@@ -90,6 +101,21 @@ public class ItemsController {
 			return "editItems";
 		}
 		
+		//上传图片
+		if(pictureFile!=null && pictureFile.getOriginalFilename()!=null && !pictureFile.getOriginalFilename().equals("")){
+			String newFile_path="D:\\uploadPic\\pic\\";
+			
+			//新文件的地址及文件名
+			String originalFilename=pictureFile.getOriginalFilename();
+			String newFile_name=UUID.randomUUID()+originalFilename.substring(originalFilename.lastIndexOf("."));
+		
+			File newFile_obj=new File(newFile_path+newFile_name);
+			pictureFile.transferTo(newFile_obj);
+			
+			items.setPic(newFile_name);
+		
+		}
+
 		
 		itemsService.updateItems(id,items);
 		
