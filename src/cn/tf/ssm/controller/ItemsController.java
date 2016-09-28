@@ -15,9 +15,11 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -142,5 +144,20 @@ public class ItemsController {
 		return "success";
 	}
 	
+	
+	//商品查询支持rest
+	@RequestMapping(value="/itemView/{type}/{id}")
+	public @ResponseBody
+	Items itemView(
+			@PathVariable("type") Integer type,
+			@PathVariable("id") Integer id) throws Exception {
+		//查询商品
+			Items items = itemsService.findItemById(id);
+			
+					
+			//输出商品信息，使用@ResponseBody转成json
+			return items;
+		}
+		
 
 }
