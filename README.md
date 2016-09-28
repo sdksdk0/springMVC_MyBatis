@@ -68,7 +68,181 @@ springmvc：请求数据，通过参数绑定，将参数赋值给controller的�
 
 流程：
 1、用户发起请求道DispatcherServlet
-2、DispatcherServlet调用HandlerAdapter去执行Handler.执行Handler之前经过参数绑定过程，将请求参数通过类型转换，将转换后的结果赋值给controller方法传参。 
+2、DispatcherServlet调用HandlerAdapter去执行Handler.执行Handler之前经过参数绑定过程，将请求参数通过类型转换，将转换后的结果赋值给controller方法传参。
+
+#异常处理
+应该把注意力放在预期异常的处理上。
+
+    public class CustomExceptionResolver implements  HandlerExceptionResolver{
+
+	@Override
+	public ModelAndView resolveException(HttpServletRequest request,
+			HttpServletResponse response, Object handler, Exception ex) {
+		ex.	printStackTrace();	
+
+		CustomException customException=null;
+		
+		//对于系统自定义异常类型直接获取异常信息
+		if(ex instanceof CustomException){
+			customException=(CustomException) ex;
+		}else{
+			//对于运行时异常，重新构造一个系统自定义的异常类型
+			customException=new CustomException("系统忙，请稍后");
+		}
+		String message=customException.getMessage();
+		ModelAndView modelAndView=new ModelAndView();
+		modelAndView.addObject("message",message);
+		modelAndView.setViewName("error");
+				
+		//将异常信息返回到页面
+		return modelAndView;
+	}
+
+    }
+
+#json转换
+如果使用了<mvc:annotation-driven。
+
+则默认已经配置好了json。
+
+如果没有，则需要添加消息转换器。
+
+    <!--注解适配器 -->
+	<bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter">
+		<property name="messageConverters">
+		<list>
+		<bean class="org.springframework.http.converter.json.MappingJacksonHttpMessageConverter"></bean>
+		</list>
+		</property>
+	</bean>
+
+
+
+#上传图片
+springmvc提供multipart协议解析接口，本身支持fileupload解析。
+
+需要添加：MultipartFile  pictureFile
+
+    //上传图片
+		if(pictureFile!=null && pictureFile.getOriginalFilename()!=null && !pictureFile.getOriginalFilename().equals("")){
+			String newFile_path="D:\\uploadPic\\pic\\";
+			
+			//新文件的地址及文件名
+			String originalFilename=pictureFile.getOriginalFilename();
+			String newFile_name=UUID.randomUUID()+originalFilename.substring(originalFilename.lastIndexOf("."));
+		
+			File newFile_obj=new File(newFile_path+newFile_name);
+			pictureFile.transferTo(newFile_obj);
+			
+			items.setPic(newFile_name);
+		
+		}
+
+
+
+
+#restFul支持
+表现层状态转化。是对http最全面的诠释，是一种进行互联网开发的理念、思想。
+
+1、每一个URI代表一种资源
+
+2、客户端和服务器之间，传递这种资源的某种表现层
+
+3、客户端通过四个HTTP动词，对服务器端资源进行操作，实现”表现层状态转化。
+
+		//商品查询支持rest
+	@RequestMapping(value="/itemView/{type}/{id}")
+	public @ResponseBody
+	Items itemView(
+			@PathVariable("type") Integer type,
+			@PathVariable("id") Integer id) throws Exception {
+		//查询商品
+			Items items = itemsService.findItemById(id);
+			
+					
+			//输出商品信息，使用@ResponseBody转成json
+			return items;
+		}
+
+#拦截器（用户登录）
+1、用户请求至拦截器
+2、如果请求的url是不需要登录就可以访问的，就放行，
+3、判断用户的身份信息是否合法，从session中获取，如果存在就放行；如果不合法就回到登录页面。
+
+
+1、拦截器
+
+    public class LoginInterceptor implements HandlerInterceptor {
+
+	
+	//执行时机：Handler执行之前，进入Handler方法之前
+	//使用场景：用户认证、授权（登陆拦截、操作权限的拦截）
+	@Override
+	public boolean preHandle(HttpServletRequest request,
+			HttpServletResponse response, Object handler) throws Exception {
+		
+		String url=request.getRequestURI();
+		if(url.indexOf("login.action")>=0){
+			return true;
+		}
+		
+		HttpSession session=request.getSession();
+		String activeUser =  (String) session.getAttribute("activeUser");
+		if(activeUser!=null){
+			return true;
+		}
+		request.getRequestDispatcher("/WEB-INF/jsp/login.jsp").forward(request, response);
+		return false;
+	}
+
+	//执行时机：进入Handler方法，在Handler返回ModelAndView之前执行
+	//使用场景：通过操作modelAndView统一处理一些模型数据或视图页面
+	@Override
+	public void postHandle(HttpServletRequest request,
+			HttpServletResponse response, Object handler,
+			ModelAndView modelAndView) throws Exception {
+		System.out.println("HandlerInterceptor2..postHandle");
+	}
+	
+	//执行时机：Handler执行完成
+	//使用场景 ：统一操作日志记录、异常处理
+	@Override
+	public void afterCompletion(HttpServletRequest request,
+			HttpServletResponse response, Object handler, Exception ex)
+			throws Exception {
+		//记录用户操作日志
+		//内容：哪个用户？什么时间？操作什么方法？操作结果？
+		System.out.println("HandlerInterceptor2..afterCompletion");
+	}
+
+    }
+
+
+2、在springmvc.xml中配置拦截器
+
+	<mvc:interceptors>
+		<mvc:interceptor>
+				<mvc:mapping path="/**"/>
+				<bean class="cn.tf.ssm.controller.interceptor.LoginInterceptor"></bean>
+			</mvc:interceptor> 
+	</mvc:interceptors>
+
+
+3、使用拦截器
+
+    @Controller
+    public class LoginController {
+	
+	@RequestMapping("/login.action")
+	public String login(HttpSession session,String username,String password){
+		
+		session.setAttribute("activeUser", username);
+		return "redirect:/items/queryItems.action";
+    }
+    }
+
+
+ 
 
 
 
